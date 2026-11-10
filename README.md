@@ -1,621 +1,192 @@
----deobfuscator by ً‌‘¨ً‌‘©ً‌‘¶ً‌‘¶ً‌‘«/ً‌‘¨ً‌’€ً‌‘´ً‌‘¨ً‌‘µ
 
--- ============================================================
--- ط§ظ„ظ…طھط؛ظٹط±ط§طھ ط§ظ„ط¹ط§ظ…ط© (Forward Declarations)
--- ============================================================
-local whitelist, localPlayer
-local checkCondition
-local virtualUserService
-local playersService, playerGui, localPlayerRef
-local coreGuiTarget
+-- [[ سكربت moh - Stable 50s FPS Lock ]] --
 
--- ============================================================
--- 1. ط¯ط§ظ„ط© ط§ظ„طھط­ظ‚ظ‚ ظ…ظ† ط§ظ„ظ‚ط§ط¦ظ…ط© ط§ظ„ط¨ظٹط¶ط§ط،
--- ============================================================
-local function checkCondition()
-    if whitelist[localPlayer.Name] 
-       or whitelist[localPlayer.DisplayName] 
-       or whitelist[localPlayer.UserId] then
-        print("èٹ’èپ¹èپں [LEO HUB] è„µèپںè„´هچ¤è„´é¢…è„´ç¯“è„´وگ‚è„µèپ¥ " .. localPlayer.Name)
-        return true
-    else
-        return false
+local CoreGui = game:GetService("CoreGui")
+local RunService = game:GetService("RunService")
+local Stats = game:GetService("Stats")
+local Lighting = game:GetService("Lighting")
+local Workspace = game:GetService("Workspace")
+
+-- إزالة أي واجهة قديمة لمنع التداخل
+pcall(function()
+    if CoreGui:FindFirstChild("moh_Stable50_UI") then
+        CoreGui.moh_Stable50_UI:Destroy()
     end
+    if gethui and gethui():FindFirstChild("moh_Stable50_UI") then
+        gethui().moh_Stable50_UI:Destroy()
+    end
+end)
+
+-- قفل الفريمات على 60 عشان يثبت على الخمسينات الحقيقية بدون تذبذب
+pcall(function()
+    if setfpscap then
+        setfpscap(60)
+    end
+end)
+
+-- إنشاء واجهة moh
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "moh_Stable50_UI"
+ScreenGui.ResetOnSpawn = false
+
+if syn and syn.protect_gui then
+    syn.protect_gui(ScreenGui)
+    ScreenGui.Parent = CoreGui
+elseif gethui then
+    ScreenGui.Parent = gethui()
+else
+    ScreenGui.Parent = CoreGui
 end
 
--- ============================================================
--- 2. ط®ط¯ظ…ط© VirtualUser
--- ============================================================
-local function getVirtualUserService()
-    virtualUserService = game:GetService("VirtualUser")
-end
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Parent = ScreenGui
+MainFrame.AnchorPoint = Vector2.new(0.5, 0)
+MainFrame.Position = UDim2.new(0.5, 0, 0, 10)
+MainFrame.Size = UDim2.new(0, 320, 0, 125)
+MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 22)
+MainFrame.BorderSizePixel = 0
 
--- ============================================================
--- 3. ط¯ط§ظ„ط© ط§ظ†طھط¸ط§ط± PlayerGui (ط­ط±ظپظٹط© ط¨ط§ظ„ظƒط§ظ…ظ„)
--- ============================================================
-local function waitForChild()
-    local function getService()
-        return game:GetService("CoreGui")
-    end
-    local a
-    local function createFolder()
-        local folder = Instance.new("Folder")
-        folder.Parent = a
-        folder:Destroy()
-    end
-    a = getService
-    local pack = table.pack(pcall(getService))
-    local b = table.unpack(pack, 1, pack.n)
-    if b then
-        a = table.unpack(pack, 2, pack.n)
-        b = a
-    end
-    if b then
-        pcall(createFolder)
-        a = table.unpack(pack, 2, pack.n)
-        return a
-    end
-    b = localPlayerRef:WaitForChild("PlayerGui")
-    a = table.unpack(pack, 2, pack.n)
-    return b
-end
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 12)
+UICorner.Parent = MainFrame
 
--- ============================================================
--- 4. ط¯ط§ظ„ط© ط¥ط¶ط§ظپط© UIScale
--- ============================================================
-local uiScaleEnabled, uiScaleAmount
+local UIStroke = Instance.new("UIStroke")
+UIStroke.Parent = MainFrame
+UIStroke.Color = Color3.fromRGB(140, 0, 255)
+UIStroke.Thickness = 2
 
-local function addUIScale(parent)
-    local uIScale
-    if uiScaleEnabled then
-        uIScale = Instance.new("UIScale")
-        uIScale.Scale = uiScaleAmount
-        uIScale.Parent = parent
-    end
-end
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Parent = MainFrame
+TitleLabel.Position = UDim2.new(0, 12, 0, 8)
+TitleLabel.Size = UDim2.new(0, 90, 0, 25)
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Text = "moh 50s FPS"
+TitleLabel.TextColor3 = Color3.fromRGB(180, 100, 255)
+TitleLabel.TextSize = 18
+TitleLabel.Font = Enum.Font.GothamBold
+TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
 
--- ============================================================
--- 5. ط¬ط¯ظˆظ„ طھطھط¨ط¹ ط§ظ„ظ„ط§ط¹ط¨ظٹظ†
--- ============================================================
-local playerStats
+local InfoLabel = Instance.new("TextLabel")
+InfoLabel.Parent = MainFrame
+InfoLabel.Position = UDim2.new(0, 110, 0, 8)
+InfoLabel.Size = UDim2.new(1, -122, 0, 25)
+InfoLabel.BackgroundTransparency = 1
+InfoLabel.Text = "FPS: -- | Ping: -- ms"
+InfoLabel.TextColor3 = Color3.fromRGB(240, 240, 240)
+InfoLabel.TextSize = 13
+InfoLabel.Font = Enum.Font.GothamMedium
+InfoLabel.TextXAlignment = Enum.TextXAlignment.Right
 
-local function onPlayerJoined(player)
-    if not playerStats[player.Name] then
-        local stats = {
-            joins = 1,
-            leaves = 0,
-            isOnline = true,
-            userId = player.UserId,
-        }
-        playerStats[player.Name] = stats
-    else
-        playerStats[player.Name].joins = playerStats[player.Name].joins + 1
-        playerStats[player.Name].isOnline = true
-    end
-end
+-- زر تفعيل وضع الثبات والتحسين
+local BoostBtn = Instance.new("TextButton")
+BoostBtn.Parent = MainFrame
+BoostBtn.Position = UDim2.new(0, 12, 0, 42)
+BoostBtn.Size = UDim2.new(1, -24, 0, 32)
+BoostBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
+BoostBtn.Text = "Stable Mode (OFF)"
+BoostBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+BoostBtn.Font = Enum.Font.GothamBold
+BoostBtn.TextSize = 13
+BoostBtn.AutoButtonColor = false
 
-local function onPlayerLeft(player)
-    if playerStats[player.Name] then
-        playerStats[player.Name].leaves = playerStats[player.Name].leaves + 1
-        playerStats[player.Name].isOnline = false
-    end
-end
+local BtnCorner1 = Instance.new("UICorner")
+BtnCorner1.CornerRadius = UDim.new(0, 8)
+BtnCorner1.Parent = BoostBtn
 
--- ============================================================
--- 6. ط¯ظˆط§ظ„ ط¥ط®ظپط§ط، ط§ظ„ظ…ط¤ط«ط±ط§طھ
--- ============================================================
-local hideEffectsEnabled
-local hideEffectsFunction
+-- زر إخفاء وإظهار الواجهة
+local ToggleUIBtn = Instance.new("TextButton")
+ToggleUIBtn.Parent = MainFrame
+ToggleUIBtn.Position = UDim2.new(0, 12, 0, 82)
+ToggleUIBtn.Size = UDim2.new(1, -24, 0, 32)
+ToggleUIBtn.BackgroundColor3 = Color3.fromRGB(50, 20, 70)
+ToggleUIBtn.Text = "Hide/Show Menu (Open)"
+ToggleUIBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleUIBtn.Font = Enum.Font.GothamBold
+ToggleUIBtn.TextSize = 13
+ToggleUIBtn.AutoButtonColor = false
 
-local function tryHideEffect(instance)
-    if not hideEffectsEnabled or not instance then
-        return
-    end
-    instance:IsA("Explosion")
-    instance:IsA("ParticleEmitter")
-    instance:IsA("Sparkles")
-    instance:IsA("Fire")
-    instance:IsA("Smoke")
-    instance:IsA("Trail")
-    instance:IsA("Beam")
-    instance:IsA("Highlight")
-    instance:IsA("SelectionBox")
-    instance:IsA("Decal")
-    instance:IsA("Texture")
-    instance:IsA("Sound")
-    instance:IsA("BasePart")
-    return
-end
+local BtnCorner2 = Instance.new("UICorner")
+BtnCorner2.CornerRadius = UDim.new(0, 8)
+BtnCorner2.Parent = ToggleUIBtn
 
--- ============================================================
--- 7. طھظپط¹ظٹظ„ ط¥ط®ظپط§ط، ط§ظ„ظ…ط¤ط«ط±ط§طھ (ط­ط±ظپظٹ)
--- ============================================================
-local lightingService
-local hideEffectsConnection
+-- عداد حي وسريع
+local lastUpdate = tick()
+local frameCount = 0
 
-local function connectEffectHider()
-    local function applyLighting()
-        lightingService.GlobalShadows = false
-        lightingService.FogEnd = 9000000000
-        lightingService.Brightness = 1
-    end
-    local function hideAllExisting()
-        local descendants = workspace:GetDescendants()
-        table.pack(next(descendants, nil))
-        local b = next(descendants)
-        local c
-        if not (b == nil) then
-            c = b
-            while true do
-                hideEffectsFunction(descendants)
-                table.pack(next(descendants, c))
-                b = next(descendants)
-                if b ~= nil then
-                    c = b
-                    continue
-                end
-                break
-            end
-        end
-        return next, descendants, b, next(descendants)
-    end
-    local function onDescendantAdded(instance)
-        if hideEffectsEnabled then
-            hideEffectsFunction(instance)
-            return instance
+RunService.RenderStepped:Connect(function()
+    frameCount = frameCount + 1
+    local currentTime = tick()
+    
+    if currentTime - lastUpdate >= 0.3 then
+        local fps = math.floor(frameCount / (currentTime - lastUpdate))
+        local ping = 0
+        
+        pcall(function()
+            ping = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
+        end)
+        
+        InfoLabel.Text = string.format("FPS: %d | Ping: %d ms", fps, ping)
+        
+        -- تلوين العداد باللون الأخضر الممتاز للخمسينات
+        if fps >= 50 then
+            InfoLabel.TextColor3 = Color3.fromRGB(100, 255, 150)
+        elseif fps >= 30 then
+            InfoLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
         else
-            return
+            InfoLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
         end
+        
+        frameCount = 0
+        lastUpdate = currentTime
     end
-    hideEffectsEnabled = not hideEffectsEnabled
-    if hideEffectsEnabled then
-        pcall(applyLighting)
-        pcall(hideAllExisting)
-        hideEffectsConnection = workspace.DescendantAdded:Connect(onDescendantAdded)
+end)
+
+-- وظيفة زر الثبات
+local stableActive = false
+BoostBtn.MouseButton1Click:Connect(function()
+    stableActive = not stableActive
+    if stableActive then
+        pcall(function()
+            Lighting.GlobalShadows = false
+            for _, v in pairs(Workspace:GetDescendants()) do
+                if v:IsA("BasePart") then
+                    v.Material = Enum.Material.SmoothPlastic
+                    v.Reflectance = 0
+                elseif v:IsA("Decal") or v:IsA("Texture") then
+                    v.Transparency = 1
+                end
+            end
+        end)
+        BoostBtn.Text = "Stable Mode: ON ⚡"
+        BoostBtn.BackgroundColor3 = Color3.fromRGB(140, 0, 255)
+        BoostBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
     else
-        return
+        BoostBtn.Text = "Stable Mode (OFF)"
+        BoostBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
+        BoostBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
     end
-end
+end)
 
--- ============================================================
--- 8. ط¯ظˆط§ظ„ ظپط­طµ ط§ظ„ط£ط­ط¬ط§ظ…
--- ============================================================
-local function isLargePart(part)
-    local size
-    if not part:IsA("BasePart") then
-        return false
+-- زر إخفاء وإظهار الواجهة
+local uiVisible = true
+ToggleUIBtn.MouseButton1Click:Connect(function()
+    uiVisible = not uiVisible
+    for _, child in ipairs(MainFrame:GetChildren()) do
+        if child ~= ToggleUIBtn and child.ClassName ~= "UICorner" and child.ClassName ~= "UIStroke" then
+            child.Visible = uiVisible
+        end
+    end
+    
+    if uiVisible then
+        MainFrame.Size = UDim2.new(0, 320, 0, 125)
+        ToggleUIBtn.Position = UDim2.new(0, 12, 0, 82)
+        ToggleUIBtn.Text = "Hide/Show Menu (Open)"
+        ToggleUIBtn.BackgroundColor3 = Color3.fromRGB(50, 20, 70)
     else
-        size = part.Size
-        return 50 <= size.X and 50 <= size.Z
+        MainFrame.Size = UDim2.new(0, 320, 0, 50)
+        ToggleUIBtn.Position = UDim2.new(0, 12, 0, 9)
+        ToggleUIBtn.Text = "Show Menu (Closed)"
+        ToggleUIBtn.BackgroundColor3 = Color3.fromRGB(100, 0, 150)
     end
-end
-
--- ============================================================
--- 9. ظپط­طµ ط§ظ„ط´ط®طµظٹط©
--- ============================================================
-local playersServiceRef
-
-local function isPlayerCharacter(instance)
-    local current = instance
-    while current do
-        if not (current:IsA("Model") and playersServiceRef:GetPlayerFromCharacter(current)) then
-            current = current.Parent
-            continue
-        end
-        return true
-    end
-    return false
-end
-
--- ============================================================
--- 10. ط¥ط®ظپط§ط، ط¥ط¶ط§ظپظٹ (Anti-Lag)
--- ============================================================
-local antiLagActive
-local hideAdditionalFunction
-
-local function tryHideAdditional(instance)
-    local function updateMaterial()
-        instance.Material = Enum.Material.SmoothPlastic
-        instance.Reflectance = 0
-        instance.CastShadow = false
-    end
-    local function hideDecal()
-        instance.LocalTransparencyModifier = 1
-        instance.Transparency = 1
-        instance.CanCollide = false
-        instance.CastShadow = false
-    end
-    local function hideTexture()
-        instance.Transparency = 1
-    end
-    local function disableEffect()
-        instance.Enabled = false
-    end
-    local function muteSound()
-        instance.Volume = 0
-    end
-    if not (not antiLagActive or not instance) then
-        instance:IsA("BasePart")
-        instance:IsA("Decal")
-        instance:IsA("Texture")
-        instance:IsA("ParticleEmitter")
-        instance:IsA("Trail")
-        instance:IsA("Beam")
-        instance:IsA("Fire")
-        instance:IsA("Smoke")
-        instance:IsA("Sparkles")
-        instance:IsA("Highlight")
-        instance:IsA("Sound")
-        return
-    end
-end
-
--- ============================================================
--- 11. طھظپط¹ظٹظ„ Anti-Lag (ط­ط±ظپظٹ)
--- ============================================================
-local antiLagConnection
-local antiLagEnabled2
-
-local function connectAntiLag()
-    local function applyLighting()
-        lightingService.GlobalShadows = false
-        lightingService.FogEnd = 1000000
-        lightingService.Brightness = 0.5
-        lightingService.EnvironmentDiffuseScale = 0
-        lightingService.EnvironmentSpecularScale = 0
-        local children = lightingService:GetChildren()
-        if not (next(children) == nil) then
-            while true do
-                if next(children) == nil then
-                    break
-                end
-            end
-        end
-    end
-    local function applyTerrain()
-        workspace.Terrain.WaterWaveSize = 0
-        workspace.Terrain.WaterWaveSpeed = 0
-        workspace.Terrain.WaterReflectance = 0
-        workspace.Terrain.WaterTransparency = 0
-    end
-    local function backgroundHide()
-        local descendants = workspace:GetDescendants()
-        local a = next
-        local b = next(descendants)
-        local c
-        if not (b == nil) then
-            while true do
-                if antiLagEnabled2 then
-                    b = next(descendants)
-                    if b == nil then
-                        c = b
-                    else
-                        continue
-                    end
-                else
-                    b = next(descendants)
-                    if b == nil then
-                        break
-                    else
-                        continue
-                    end
-                end
-                return a, descendants, c, nil
-            end
-        end
-        return next, descendants, b, nil
-    end
-    local function onDescendantAdded(instance)
-        local function backgroundHide2()
-            hideAdditionalFunction(instance)
-        end
-        if antiLagEnabled2 then
-            task.defer(backgroundHide2)
-            return instance
-        else
-            return
-        end
-    end
-    if not antiLagEnabled2 then
-        antiLagEnabled2 = true
-        pcall(applyLighting)
-        pcall(applyTerrain)
-        task.spawn(backgroundHide)
-        antiLagConnection = workspace.DescendantAdded:Connect(onDescendantAdded)
-        return
-    end
-end
-
-local function disconnectAntiLag()
-    antiLagEnabled2 = false
-    if antiLagConnection then
-        antiLagConnection:Disconnect()
-        antiLagConnection = nil
-    end
-end
-
--- ============================================================
--- 12. ط¯ظˆط§ظ„ ط¥ط®ظپط§ط، ط§ظ„ظ„ط§ط¹ط¨ظٹظ†
--- ============================================================
-local hiddenPlayersTable
-local checkPlayerHidden
-
-local function checkPlayerHidden(player)
-    if not player then
-        return false
-    elseif player == localPlayerRef then
-        return hiddenPlayersTable[player.Name] == true
-    else
-        return hiddenPlayersTable[player.Name] == true
-    end
-end
-
-local function hideCharacter(character)
-    local b
-    local function updateCFrame()
-        b.CFrame = CFrame.new(0, -50000, 0)
-    end
-    local c
-    local function hideTransparency()
-        c.LocalTransparencyModifier = 1
-        c.Transparency = 1
-    end
-    local function hideTexture()
-        c.Transparency = 1
-    end
-    local function destroyDecal()
-        c:Destroy()
-    end
-    local function disableEffect()
-        c.Enabled = false
-    end
-    b = not character or not character.Parent
-    local d, e, f, g, h
-    if not b then
-        b = character:FindFirstChild("UpperTorso")
-        character:GetDescendants()
-        d = ipairs(e)
-        h = table.pack(d(e, 0))
-        g = table.unpack(h, 1, h.n)
-        if not (g == nil) then
-            f = g
-            while true do
-                c = table.unpack(h, 2, h.n)
-                if c:IsA("BasePart") then
-                    pcall(hideTransparency)
-                    h = table.pack(d(e, f))
-                    g = table.unpack(h, 1, h.n)
-                    if g == nil then
-                        f = g
-                    else
-                        f = g
-                        continue
-                    end
-                else
-                    c = table.unpack(h, 2, h.n)
-                    c:IsA("Decal")
-                    c = table.unpack(h, 2, h.n)
-                    c:IsA("Texture")
-                    c = table.unpack(h, 2, h.n)
-                    c:IsA("Highlight")
-                    c = table.unpack(h, 2, h.n)
-                    c:IsA("SelectionBox")
-                    c = table.unpack(h, 2, h.n)
-                    c:IsA("BoxHandleAdornment")
-                    c = table.unpack(h, 2, h.n)
-                    c:IsA("BillboardGui")
-                    c = table.unpack(h, 2, h.n)
-                    c:IsA("SurfaceGui")
-                    c = table.unpack(h, 2, h.n)
-                    h = table.pack(d(e, f))
-                    g = table.unpack(h, 1, h.n)
-                    if g == nil then
-                        break
-                    else
-                        f = g
-                        continue
-                    end
-                end
-                return character, b, d, e, f, table.unpack(h, 1, h.n)
-            end
-        end
-        return character, b, d, e, g, table.unpack(h, 1, h.n)
-    end
-end
-
-local function showCharacter(character)
-    local b
-    local function restoreTransparency()
-        b.LocalTransparencyModifier = 0
-        b.Transparency = 0
-    end
-    local function restoreTexture()
-        b.Transparency = 0
-    end
-    local function destroyDecal()
-        b:Destroy()
-    end
-    local function enableEffect()
-        b.Enabled = true
-    end
-    local c, d, e, f, g
-    if not (not character or not character.Parent) then
-        character:GetDescendants()
-        c = ipairs(d)
-        g = table.pack(c(d, 0))
-        f = table.unpack(g, 1, g.n)
-        if not (f == nil) then
-            e = f
-            while true do
-                b = table.unpack(g, 2, g.n)
-                if b:IsA("BasePart") then
-                    pcall(restoreTransparency)
-                    g = table.pack(c(d, e))
-                    f = table.unpack(g, 1, g.n)
-                    if f == nil then
-                        e = f
-                    else
-                        e = f
-                        continue
-                    end
-                else
-                    b = table.unpack(g, 2, g.n)
-                    b:IsA("Decal")
-                    b = table.unpack(g, 2, g.n)
-                    b:IsA("Texture")
-                    b = table.unpack(g, 2, g.n)
-                    b:IsA("Highlight")
-                    b = table.unpack(g, 2, g.n)
-                    b:IsA("SelectionBox")
-                    b = table.unpack(g, 2, g.n)
-                    b:IsA("BoxHandleAdornment")
-                    b = table.unpack(g, 2, g.n)
-                    b:IsA("BillboardGui")
-                    b = table.unpack(g, 2, g.n)
-                    b:IsA("SurfaceGui")
-                    b = table.unpack(g, 2, g.n)
-                    g = table.pack(c(d, e))
-                    f = table.unpack(g, 1, g.n)
-                    if f == nil then
-                        break
-                    else
-                        e = f
-                        continue
-                    end
-                end
-                return character, c, d, e, table.unpack(g, 1, g.n)
-            end
-        end
-        return character, c, d, f, table.unpack(g, 1, g.n)
-    end
-end
-
--- ============================================================
--- 13. ط±ط¨ط· ط£ط­ط¯ط§ط« ط§ظ„ظ„ط§ط¹ط¨ظٹظ†
--- ============================================================
-local checkPlayerFunc, showPlayerFunc
-local hidePlayerFunc, transformPlayerFunc
-
-local function transformPlayer(a)
-    if not (not a or not a.Character) then
-        checkPlayerFunc(a)
-        showPlayerFunc(a.Character)
-        return a
-    end
-end
-
-local connectCharacterAdded
-
-local function connectEvents5(a)
-    local function onCharacterAdded(b)
-        task.wait(0.1)
-        if checkPlayerFunc(a) then
-            hidePlayerFunc(b)
-        end
-        return b
-    end
-    transformPlayerFunc(a)
-    a.CharacterAdded:Connect(onCharacterAdded)
-    return a
-end
-
--- ============================================================
--- 14. ظ…ط±ط§ظ‚ط¨ط© ط¥ط¶ط§ظپط§طھ Workspace
--- ============================================================
-local function onDescendantAdded3(instance)
-    local function destroyInstance()
-        local function destroyInner()
-            instance:Destroy()
-        end
-        local function destroyOuter()
-            instance:Destroy()
-        end
-        local parent = instance.Parent
-        local getPlayerFromCharacter, getPlayerFromCharacter2
-        if parent then
-            getPlayerFromCharacter = playersServiceRef:GetPlayerFromCharacter(parent)
-            if getPlayerFromCharacter and checkPlayerFunc(getPlayerFromCharacter) then
-                pcall(destroyInner)
-                parent:IsA("BasePart")
-                getPlayerFromCharacter2 = playersServiceRef:GetPlayerFromCharacter(parent.Parent)
-                if getPlayerFromCharacter2 and checkPlayerFunc(getPlayerFromCharacter2) then
-                    pcall(destroyOuter)
-                    return parent, getPlayerFromCharacter, getPlayerFromCharacter2
-                end
-                return parent, getPlayerFromCharacter
-            else
-                parent:IsA("BasePart")
-                return
-            end
-        end
-    end
-    if not (not hideEffectsEnabled and next(hiddenPlayersTable) == nil) then
-        instance:IsA("Highlight")
-        instance:IsA("SelectionBox")
-        instance:IsA("BoxHandleAdornment")
-        return
-    end
-end
-
--- ============================================================
--- 15. ط­ظ„ظ‚ط© Heartbeat ظ„ط¥ط®ظپط§ط، ط§ظ„ظ„ط§ط¹ط¨ظٹظ† (ط­ط±ظپظٹط©)
--- ============================================================
-local function onHeartbeat4()
-    local a
-    local function updateCFrame()
-        a.CFrame = CFrame.new(0, -50000, 0)
-    end
-    local b
-    local function destroyInstance()
-        b:Destroy()
-    end
-    local function hideTransparency()
-        b.LocalTransparencyModifier = 1
-    end
-    local c, d, e, f, character, g, h, i, j, l, m
-    if not (not hideEffectsEnabled and next(hiddenPlayersTable) == nil) then
-        playersServiceRef:GetPlayers()
-        c = ipairs(d)
-        m = table.pack(c(d, 0))
-        f = table.unpack(m, 1, m.n)
-        if not (f == nil) then
-            e = f
-            while true do
-                a = table.unpack(m, 2, m.n)
-                if checkPlayerFunc(a) and m[2].Character then
-                    character = m[2].Character
-                    a = character:FindFirstChild("HumanoidRootPart") 
-                     or character:FindFirstChild("Torso") 
-                     or character:FindFirstChild("UpperTorso")
-                    if a then
-                        pcall(updateCFrame)
-                    end
-                    h = character:GetChildren()
-                    g = ipairs(h)
-                    h = select(2, ipairs(h))
-                    m = table.pack(g(h, 0))
-                    j = table.unpack(m, 1, m.n)
-                    if not (j == nil) then
-                        i = j
-                        while true do
-                            b = table.unpack(m, 2, m.n)
-                            l = b:IsA("Highlight")
-                            if not l then
-                                b = table.unpack(m, 2, m.n)
-                                l = b:IsA("SelectionBox")
-                            end
-                            if not l then
-                                b = table.unpack(m, 2, m.n)
-                                l = b:IsA("BoxHandleAdornment")
-                            end
-                            if l then
-                                pcall(destroyInstance)
-                                m = table.pack(g(h, i))
-                                j = table.unpack(m, 1, m.n)
-                                if not (j == nil) then
-                                    i = j
-                                    continue
-                                end
-                            else
-                                b = table.unpack(m, 2, m.n)
-         
+end)
